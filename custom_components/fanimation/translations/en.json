@@ -1,0 +1,25 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fanimation Fan Setup",
+        "description": "Enter the BLE MAC address of your Fanimation fan.\n\nDiscovered fans: {discovered}",
+        "data": {
+          "address": "MAC Address"
+        }
+      },
+      "bluetooth_confirm": {
+        "title": "Fanimation Fan Discovered",
+        "description": "Found Fanimation fan: {name}. Do you want to set it up?"
+      }
+    },
+    "error": {
+      "invalid_mac": "Invalid MAC address format. Use AA:BB:CC:DD:EE:FF",
+      "cannot_connect": "Could not connect to the fan. Make sure it is powered on and in range.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This fan is already configured."
+    }
+  }
+}

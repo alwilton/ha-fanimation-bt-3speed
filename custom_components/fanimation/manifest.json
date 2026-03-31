@@ -1,0 +1,19 @@
+{
+  "domain": "fanimation",
+  "name": "Fanimation Fan",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "bluetooth": [
+    {
+      "service_uuid": "0000e000-0000-1000-8000-00805f9b34fb"
+    }
+  ],
+  "requirements": [
+    "bleak>=0.21.0",
+    "bleak-retry-connector>=3.0.0"
+  ],
+  "version": "1.0.0"
+}
