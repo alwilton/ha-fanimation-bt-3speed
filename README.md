@@ -61,6 +61,37 @@ Protocol was reverse-engineered from the fanSync Android APK.
 
 Tested with AC Standard (3-speed) Fanimation fans with a downlight. Other Fanimation BLE fans using the same `0xE000` service should also work.
 
+## Identifying Your Fan in HA Bluetooth
+
+If you need to find your fan's MAC address, go to **Settings → System → Hardware → All Hardware → Bluetooth** in HA. Each discovered device shows its advertisement data as JSON. Look for these identifiers:
+
+**Primary identifier — service UUID:**
+```json
+"service_uuids": ["0000e000-0000-1000-8000-00805f9b34fb"]
+```
+This is the definitive Fanimation BLE service UUID. If a device has this, it's your fan.
+
+**Secondary clues:**
+
+| Field | Expected value |
+|-------|---------------|
+| `name` | `"CeilingFan"` (common Fanimation device name) |
+| `connectable` | `true` |
+| `rssi` | −50 to −70 dBm if within 5–10m; weaker than −80 suggests out of range |
+
+**Example of a matching entry:**
+```json
+{
+  "name": "CeilingFan",
+  "address": "XX:XX:XX:XX:XX:XX",
+  "rssi": -65,
+  "service_uuids": ["0000e000-0000-1000-8000-00805f9b34fb"],
+  "connectable": true
+}
+```
+
+> **Note:** The fan may not always include the service UUID in every advertisement broadcast. If it doesn't appear in the auto-discovery flow, use **manual setup** and enter the MAC address directly.
+
 ## Troubleshooting
 
 - **Fan not discovered**: Ensure the HA machine has Bluetooth and is within range. Check HA logs for BLE errors.
