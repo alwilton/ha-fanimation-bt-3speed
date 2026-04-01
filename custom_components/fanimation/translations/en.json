@@ -26,9 +26,9 @@
     "step": {
       "init": {
         "title": "Fanimation Fan Options",
-        "description": "Update the BLE MAC address of your Fanimation fan.\n\nCurrent address: {current}",
+        "description": "Select a discovered fan from the dropdown or type a MAC address manually.\n\n{discovered}\n\nCurrent: {current}",
         "data": {
-          "address": "MAC Address"
+          "address": "Fan MAC Address"
         }
       }
     },

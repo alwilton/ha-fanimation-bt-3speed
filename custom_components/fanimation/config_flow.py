@@ -19,6 +19,12 @@ from homeassistant.components.bluetooth import (
 )
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.selector import (
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
 from .const import DOMAIN, SERVICE_UUID
 
@@ -155,16 +161,37 @@ class FanimationOptionsFlow(config_entries.OptionsFlow):
     """Handle options for an existing Fanimation config entry.
 
     Allows changing the fan's MAC address after initial setup.
+    Scans for nearby Fanimation fans and presents them as a dropdown,
+    with the option to type a custom MAC address.
     """
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
         self._config_entry = config_entry
 
+    def _get_discovered_fans(self) -> list[SelectOptionDict]:
+        """Scan BLE advertisements for Fanimation fans (service 0xE000).
+
+        Returns a list of SelectOptionDict entries for the dropdown,
+        each labelled "Name (AA:BB:CC:DD:EE:FF)" with the address as value.
+        """
+        options: list[SelectOptionDict] = []
+        seen: set[str] = set()
+        for info in async_discovered_service_info(self.hass):
+            if SERVICE_UUID.lower() in [
+                str(u).lower() for u in info.service_uuids
+            ]:
+                addr = info.address.upper()
+                if addr not in seen:
+                    seen.add(addr)
+                    label = f"{info.name or 'Fanimation Fan'}  ({addr})  RSSI {info.rssi} dBm"
+                    options.append(SelectOptionDict(value=addr, label=label))
+        return options
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Show the options form with the current MAC address pre-filled."""
+        """Show the options form with discovered fans + current MAC pre-filled."""
         errors: dict[str, str] = {}
         current_address = self._config_entry.data.get(CONF_ADDRESS, "")
 
@@ -174,7 +201,6 @@ class FanimationOptionsFlow(config_entries.OptionsFlow):
             if not FanimationConfigFlow._validate_mac(address):
                 errors["base"] = "invalid_mac"
             else:
-                # Update the config entry data with the new address
                 self.hass.config_entries.async_update_entry(
                     self._config_entry,
                     data={**self._config_entry.data, CONF_ADDRESS: address},
@@ -182,13 +208,42 @@ class FanimationOptionsFlow(config_entries.OptionsFlow):
                 )
                 return self.async_create_entry(title="", data={})
 
+        # Build dropdown options: discovered fans + current address as fallback
+        discovered = self._get_discovered_fans()
+        discovered_addresses = {opt["value"] for opt in discovered}
+
+        # Always include current address so it shows in the list even if not advertising
+        if current_address and current_address not in discovered_addresses:
+            discovered.insert(
+                0,
+                SelectOptionDict(
+                    value=current_address,
+                    label=f"Current: {current_address}",
+                ),
+            )
+
+        discovered_count = (
+            f"{len(discovered_addresses)} fan(s) found nearby"
+            if discovered_addresses
+            else "No fans found nearby — type a MAC address manually"
+        )
+
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_ADDRESS, default=current_address): str,
+                    vol.Required(CONF_ADDRESS, default=current_address): SelectSelector(
+                        SelectSelectorConfig(
+                            options=discovered,
+                            custom_value=True,   # allows typing a MAC not in the list
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
                 }
             ),
             errors=errors,
-            description_placeholders={"current": current_address},
+            description_placeholders={
+                "current": current_address,
+                "discovered": discovered_count,
+            },
         )
