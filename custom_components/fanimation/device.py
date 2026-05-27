@@ -69,8 +69,11 @@ class FanimationDevice:
 
         client: BleakClient | None = None
         try:
-            client = BleakClient(self.address)
-            await client.connect(timeout=timeout)
+            client = await establish_connection(
+                BleakClient,
+                self.address,
+                self.address,
+            )
 
             # Verify the fan service exists
             services = client.services
