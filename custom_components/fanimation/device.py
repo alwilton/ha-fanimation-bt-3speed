@@ -14,6 +14,9 @@ import logging
 from bleak import BleakClient
 from bleak_retry_connector import establish_connection, BleakNotFoundError
 
+from homeassistant.components import bluetooth
+from homeassistant.core import HomeAssistant
+
 from .const import (
     DEFAULT_RETRIES,
     DEFAULT_TIMEOUT,
@@ -30,8 +33,9 @@ _LOGGER = logging.getLogger(__name__)
 class FanimationDevice:
     """Manages BLE communication with a single Fanimation fan."""
 
-    def __init__(self, address: str) -> None:
+    def __init__(self, hass: HomeAssistant, address: str) -> None:
         """Initialize with the fan's BLE MAC address."""
+        self._hass = hass
         self.address = address
         self._state: FanState | None = None
         self._lock = asyncio.Lock()
@@ -69,9 +73,19 @@ class FanimationDevice:
 
         client: BleakClient | None = None
         try:
+            ble_device = bluetooth.async_ble_device_from_address(
+                self._hass, self.address, connectable=True
+            )
+            if ble_device is None:
+                _LOGGER.warning(
+                    "Fan %s not currently visible to any BLE adapter or proxy",
+                    self.address,
+                )
+                return None
+
             client = await establish_connection(
                 BleakClient,
-                self.address,
+                ble_device,
                 self.address,
             )
 

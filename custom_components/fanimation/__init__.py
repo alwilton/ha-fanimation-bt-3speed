@@ -23,7 +23,7 @@ PLATFORMS = [Platform.FAN, Platform.LIGHT]
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Fanimation from a config entry."""
     address = entry.data[CONF_ADDRESS]
-    device = FanimationDevice(address)
+    device = FanimationDevice(hass, address)
 
     # Try to get initial state (non-critical if it fails)
     try:
